@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watchlist Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        .flag-icon {
+            width: 20px;
+            height: 15px;
+            display: inline-block;
+            margin-right: 5px;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .korea { background: linear-gradient(to bottom, #000000 33%, #ffffff 33%, #ffffff 66%, #C60C30 66%); }
+        .thailand { background: linear-gradient(to bottom, #A51931 20%, #ffffff 20%, #ffffff 40%, #A51931 40%, #A51931 60%, #ffffff 60%, #ffffff 80%, #2D2A4A 80%); }
+        .japan { background: #ffffff; position: relative; }
+        .japan:after { content: ""; position: absolute; width: 8px; height: 8px; background: #BC002D; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .china { background: #DE2910; }
+        .taiwan { background: #FE0000; }
+        
+        .drama-card {
+            transition: all 0.3s ease;
+        }
+        
+        .drama-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .rating-stars {
+            color: #fbbf24;
+        }
+        
+        .rating-hearts {
+            color: #ec4899;
+        }
+        
+        .bl-tag {
+            background-color: #a78bfa;
+            color: white;
+        }
+        
+        .kdrama-tag {
+            background-color: #f472b6;
+            color: white;
+        }
+        
+        .status-badge {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+        
+        .completed {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .watching {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .planned {
+            background-color: #64748b;
+            color: white;
+        }
+        
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: scale(1.03);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-purple-800 mb-2">My Drama Tracker</h1>
+            <p class="text-gray-600">Track your BL and K-drama journey</p>
+        </header>
+        
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button id="list-tab" class="px-4 py-2 font-medium text-purple-800 border-b-2 border-purple-800">My Dramas</button>
+            <button id="add-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-purple-800">Add New</button>
+            <button id="stats-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-purple-800">Statistics</button>
+        </div>
+        
+        <!-- Search and Filter Section -->
+        <div id="list-controls" class="mb-6">
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="relative flex-grow">
+                    <input type="text" id="search-input" placeholder="Search dramas..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                </div>
+                <div class="flex gap-2">
+                    <select id="filter-country" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="">All Countries</option>
+                        <option value="South Korea">South Korea</option>
+                        <option value="Thailand">Thailand</option>
+                        <option value="Japan">Japan</option>
+                        <option value="China">China</option>
+                        <option value="Taiwan">Taiwan</option>
+                        <option value="Vietnam">Vietnam</option>
+                        <option value="Philippines">Philippines</option>
+                        <option value="Mexico">Mexico</option>
+                        <option value="India">India</option>
+                    </select>
+                    <select id="filter-status" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="">All Status</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Currently Watching">Currently Watching</option>
+                        <option value="Plan to Watch">Plan to Watch</option>
+                    </select>
+                    <select id="filter-rating" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="">All Ratings</option>
+                        <option value="5">5 stars/hearts</option>
+                        <option value="4">4+ stars/hearts</option>
+                        <option value="3">3+ stars/hearts</option>
+                        <option value="2">2+ stars/hearts</option>
+                        <option value="1">1+ stars/hearts</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <span id="drama-count" class="text-gray-600">0 dramas</span>
+                </div>
+                <div class="flex gap-2">
+                    <button id="sort-alphabetical" class="px-3 py-1 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">A-Z</button>
+                    <button id="sort-rating" class="px-3 py-1 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Rating</button>
+                    <button id="sort-recent" class="px-3 py-1 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Recent</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Drama List Section -->
+        <section id="list-section">
+            <div id="drama-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Drama cards will be inserted here by JavaScript -->
+            </div>
+        </section>
+        
+        <!-- Add New Drama Section -->
+        <section id="add-section" class="hidden">
+            <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold text-purple-800 mb-6">Add New Drama</h2>
+                <form id="add-drama-form" class="space-y-4">
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Title*</label>
+                        <input type="text" id="title" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="genre" class="block text-sm font-medium text-gray-700 mb-1">Genre*</label>
+                            <select id="genre" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                <option value="">Select genre</option>
+                                <option value="BL">BL (Boys' Love)</option>
+                                <option value="K-Drama">K-Drama</option>
+                                <option value="C-Drama">C-Drama</option>
+                                <option value="J-Drama">J-Drama</option>
+                                <option value="Thai Drama">Thai Drama</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="country" class="block text-sm font-medium text-gray-700 mb-1">Country*</label>
+                            <select id="country" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                <option value="">Select country</option>
+                                <option value="South Korea">South Korea</option>
+                                <option value="Thailand">Thailand</option>
+                                <option value="Japan">Japan</option>
+                                <option value="China">China</option>
+                                <option value="Taiwan">Taiwan</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status*</label>
+                            <select id="status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                <option value="">Select status</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Currently Watching">Currently Watching</option>
+                                <option value="Plan to Watch">Plan to Watch</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="rating-type" class="block text-sm font-medium text-gray-700 mb-1">Rating Type*</label>
+                            <select id="rating-type" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                <option value="">Select rating type</option>
+                                <option value="stars">Stars (1-10)</option>
+                                <option value="hearts">Hearts (1-5)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="rating-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+                        <div id="stars-rating" class="hidden">
+                            <div class="flex items-center space-x-1">
+                                <button type="button" class="rating-btn" data-value="1">★</button>
+                                <button type="button" class="rating-btn" data-value="2">★</button>
+                                <button type="button" class="rating-btn" data-value="3">★</button>
+                                <button type="button" class="rating-btn" data-value="4">★</button>
+                                <button type="button" class="rating-btn" data-value="5">★</button>
+                                <button type="button" class="rating-btn" data-value="6">★</button>
+                                <button type="button" class="rating-btn" data-value="7">★</button>
+                                <button type="button" class="rating-btn" data-value="8">★</button>
+                                <button type="button" class="rating-btn" data-value="9">★</button>
+                                <button type="button" class="rating-btn" data-value="10">★</button>
+                                <span id="stars-value" class="ml-2 text-gray-600">0</span>
+                            </div>
+                        </div>
+                        <div id="hearts-rating" class="hidden">
+                            <div class="flex items-center space-x-1">
+                                <button type="button" class="rating-btn" data-value="1">♥</button>
+                                <button type="button" class="rating-btn" data-value="2">♥</button>
+                                <button type="button" class="rating-btn" data-value="3">♥</button>
+                                <button type="button" class="rating-btn" data-value="4">♥</button>
+                                <button type="button" class="rating-btn" data-value="5">♥</button>
+                                <span id="hearts-value" class="ml-2 text-gray-600">0</span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="rating" value="0">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="date-started" class="block text-sm font-medium text-gray-700 mb-1">Date Started</label>
+                            <input type="date" id="date-started" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        </div>
+                        
+                        <div>
+                            <label for="date-finished" class="block text-sm font-medium text-gray-700 mb-1">Date Finished</label>
+                            <input type="date" id="date-finished" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="review" class="block text-sm font-medium text-gray-700 mb-1">Review/Notes</label>
+                        <textarea id="review" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="image-url" class="block text-sm font-medium text-gray-700 mb-1">Image URL (optional)</label>
+                        <input type="url" id="image-url" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button type="reset" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Reset</button>
+                        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Add Drama</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+        
+        <!-- Statistics Section -->
+        <section id="stats-section" class="hidden">
+            <h2 class="text-2xl font-bold text-purple-800 mb-6">My Drama Statistics</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="text-4xl font-bold text-purple-800 mb-2" id="total-dramas">0</div>
+                    <div class="text-gray-600">Total Dramas</div>
+                </div>
+                
+                <div class="stat-card bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="text-4xl font-bold text-purple-800 mb-2" id="completed-dramas">0</div>
+                    <div class="text-gray-600">Completed</div>
+                </div>
+                
+                <div class="stat-card bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="text-4xl font-bold text-purple-800 mb-2" id="watching-dramas">0</div>
+                    <div class="text-gray-600">Watching</div>
+                </div>
+                
+                <div class="stat-card bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="text-4xl font-bold text-purple-800 mb-2" id="planned-dramas">0</div>
+                    <div class="text-gray-600">Planned</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-purple-800 mb-4">Dramas by Country</h3>
+                    <div id="country-chart" class="h-64">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-purple-800 mb-4">Dramas by Genre</h3>
+                    <div id="genre-chart" class="h-64">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-purple-800 mb-4">Rating Distribution</h3>
+                <div id="rating-chart" class="h-64">
+                    <!-- Chart will be rendered here -->
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Drama Details Modal -->
+    <div id="drama-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 id="modal-title" class="text-2xl font-bold text-purple-800"></h2>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span id="modal-genre" class="text-xs px-2 py-1 rounded-full"></span>
+                            <span id="modal-country" class="text-sm text-gray-600 flex items-center"></span>
+                        </div>
+                    </div>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="md:col-span-1">
+                        <img id="modal-image" src="https://via.placeholder.com/300x450" alt="Drama poster" class="w-full rounded-lg shadow-md">
+                    </div>
+                    <div class="md:col-span-2">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p class="text-sm text-gray-500">Status</p>
+                                <p id="modal-status" class="font-medium"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Rating</p>
+                                <p id="modal-rating" class="font-medium"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Started</p>
+                                <p id="modal-started" class="font-medium">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Finished</p>
+                                <p id="modal-finished" class="font-medium">-</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">My Review</p>
+                            <p id="modal-review" class="text-gray-700 whitespace-pre-line">No review added yet.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button id="edit-drama" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Edit</button>
+                    <button id="delete-drama" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Drama Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-purple-800">Edit Drama</h2>
+                    <button id="close-edit-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="edit-drama-form" class="space-y-4">
+                    <input type="hidden" id="edit-id">
+                    
+                    <div>
+                        <label for="edit-title" class="block text-sm font-medium text-gray-700 mb-1">Title*</label>
+                        <input type="text" id="edit-title" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-genre" class="block text-sm font-medium text-gray-700 mb-1">Genre*</label>
+                            <select id="edit-genre" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                <option value="BL">BL (Boys' Love)</option>
+                                <option value="K-Drama">K-Drama</option>
+                                <option value="C-Drama">C-Drama</option>
+                                <option value="J-Drama">J-Drama</option>
+                                <option value="Thai Drama">Thai Drama</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="edit-country" class="block text-sm font-medium text-gray-700 mb-1">Country*</label>
+                            <select id="edit-country" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                <option value="South Korea">South Korea</option>
+                                <option value="Thailand">Thailand</option>
+                                <option value="Japan">Japan</option>
+                                <option value="China">China</option>
+                                <option value="Taiwan">Taiwan</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-status" class="block text-sm font-medium text-gray-700 mb-1">Status*</label>
+                            <select id="edit-status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                <option value="Completed">Completed</option>
+                                <option value="Currently Watching">Currently Watching</option>
+                                <option value="Plan to Watch">Plan to Watch</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+                            <div id="edit-rating-container">
+                                <div id="edit-stars-rating" class="hidden">
+                                    <div class="flex items-center space-x-1">
+                                        <button type="button" class="edit-rating-btn" data-value="1">★</button>
+                                        <button type="button" class="edit-rating-btn" data-value="2">★</button>
+                                        <button type="button" class="edit-rating-btn" data-value="3">★</button>
+                                        <button type="button" class="edit-rating-btn" data-value="4">★</button>
+                                        <button type="button" class="edit-rating-btn" data-value="5">★</button>
+                                        <button type="button" class="edit-rating-btn" data-value="6">★</button>
+                                        <button type="button" class="edit-rating-btn" data-value="7">★</button>
+                                        <button type="button" class="edit-rating-btn" data-value="8">★</button>
+                                        <button type="button" class="edit-rating-btn" data-value="9">★</button>
+                                        <button type="button" class="edit-rating-btn" data-value="10">★</button>
+                                        <span id="edit-stars-value" class="ml-2 text-gray-600">0</span>
+                                    </div>
+                                </div>
+                                <div id="edit-hearts-rating" class="hidden">
+                                    <div class="flex items-center space-x-1">
+                                        <button type="button" class="edit-rating-btn" data-value="1">♥</button>
+                                        <button type="button" class="edit-rating-btn" data-value="2">♥</button>
+                                        <button type="button" class="edit-rating-btn" data-value="3">♥</button>
+                                        <button type="button" class="edit-rating-btn" data-value="4">♥</button>
+                                        <button type="button" class="edit-rating-btn" data-value="5">♥</button>
+                                        <span id="edit-hearts-value" class="ml-2 text-gray-600">0</span>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="edit-rating" value="0">
+                                <select id="edit-rating-type" class="mt-2 w-full px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                                    <option value="stars">Stars (1-10)</option>
+                                    <option value="hearts">Hearts (1-5)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-date-started" class="block text-sm font-medium text-gray-700 mb-1">Date Started</label>
+                            <input type="date" id="edit-date-started" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        </div>
+                        
+                        <div>
+                            <label for="edit-date-finished" class="block text-sm font-medium text-gray-700 mb-1">Date Finished</label>
+                            <input type="date" id="edit-date-finished" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="edit-review" class="block text-sm font-medium text-gray-700 mb-1">Review/Notes</label>
+                        <textarea id="edit-review" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="edit-image-url" class="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                        <input type="url" id="edit-image-url" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button type="button" id="cancel-edit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Database setup
+        let db;
+        const DB_NAME = 'DramaTrackerDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'dramas';
+        
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = (event) => {
+                    console.error('Database error:', event.target.error);
+                    reject('Database error');
+                };
+                
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('title', 'title', { unique: false });
+                        store.createIndex('genre', 'genre', { unique: false });
+                        store.createIndex('country', 'country', { unique: false });
+                        store.createIndex('status', 'status', { unique: false });
+                        store.createIndex('rating', 'rating', { unique: false });
+                        store.createIndex('dateAdded', 'dateAdded', { unique: false });
+                    }
+                };
+            });
+        }
+        
+        // Add drama to database
+        function addDrama(drama) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                drama.dateAdded = new Date().toISOString();
+                
+                const request = store.add(drama);
+                
+                request.onsuccess = () => {
+                    resolve(request.result);
+                };
+                
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+        
+        // Get all dramas from database
+        function getAllDramas() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.getAll();
+                
+                request.onsuccess = () => {
+                    resolve(request.result);
+                };
+                
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+        
+        // Update drama in database
+        function updateDrama(drama) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                const request = store.put(drama);
+                
+                request.onsuccess = () => {
+                    resolve(request.result);
+                };
+                
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+        
+        // Delete drama from database
+        function deleteDrama(id) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                const request = store.delete(id);
+                
+                request.onsuccess = () => {
+                    resolve();
+                };
+                
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+        
+        // DOM elements
+        const listTab = document.getElementById('list-tab');
+        const addTab = document.getElementById('add-tab');
+        const statsTab = document.getElementById('stats-tab');
+        
+        const listSection = document.getElementById('list-section');
+        const addSection = document.getElementById('add-section');
+        const statsSection = document.getElementById('stats-section');
+        
+        const searchInput = document.getElementById('search-input');
+        const filterCountry = document.getElementById('filter-country');
+        const filterStatus = document.getElementById('filter-status');
+        const filterRating = document.getElementById('filter-rating');
+        
+        const sortAlphabetical = document.getElementById('sort-alphabetical');
+        const sortRating = document.getElementById('sort-rating');
+        const sortRecent = document.getElementById('sort-recent');
+        
+        const dramaList = document.getElementById('drama-list');
+        const dramaCount = document.getElementById('drama-count');
+        
+        const addDramaForm = document.getElementById('add-drama-form');
+        const ratingType = document.getElementById('rating-type');
+        const ratingContainer = document.getElementById('rating-container');
+        const starsRating = document.getElementById('stars-rating');
+        const heartsRating = document.getElementById('hearts-rating');
+        const starsValue = document.getElementById('stars-value');
+        const heartsValue = document.getElementById('hearts-value');
+        const ratingInput = document.getElementById('rating');
+        
+        const dramaModal = document.getElementById('drama-modal');
+        const closeModal = document.getElementById('close-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalGenre = document.getElementById('modal-genre');
+        const modalCountry = document.getElementById('modal-country');
+        const modalImage = document.getElementById('modal-image');
+        const modalStatus = document.getElementById('modal-status');
+        const modalRating = document.getElementById('modal-rating');
+        const modalStarted = document.getElementById('modal-started');
+        const modalFinished = document.getElementById('modal-finished');
+        const modalReview = document.getElementById('modal-review');
+        const editDramaBtn = document.getElementById('edit-drama');
+        const deleteDramaBtn = document.getElementById('delete-drama');
+        
+        const editModal = document.getElementById('edit-modal');
+        const closeEditModal = document.getElementById('close-edit-modal');
+        const cancelEdit = document.getElementById('cancel-edit');
+        const editDramaForm = document.getElementById('edit-drama-form');
+        const editId = document.getElementById('edit-id');
+        const editTitle = document.getElementById('edit-title');
+        const editGenre = document.getElementById('edit-genre');
+        const editCountry = document.getElementById('edit-country');
+        const editStatus = document.getElementById('edit-status');
+        const editRatingType = document.getElementById('edit-rating-type');
+        const editStarsRating = document.getElementById('edit-stars-rating');
+        const editHeartsRating = document.getElementById('edit-hearts-rating');
+        const editStarsValue = document.getElementById('edit-stars-value');
+        const editHeartsValue = document.getElementById('edit-hearts-value');
+        const editRatingInput = document.getElementById('edit-rating');
+        const editDateStarted = document.getElementById('edit-date-started');
+        const editDateFinished = document.getElementById('edit-date-finished');
+        const editReview = document.getElementById('edit-review');
+        const editImageUrl = document.getElementById('edit-image-url');
+        
+        // Statistics elements
+        const totalDramas = document.getElementById('total-dramas');
+        const completedDramas = document.getElementById('completed-dramas');
+        const watchingDramas = document.getElementById('watching-dramas');
+        const plannedDramas = document.getElementById('planned-dramas');
+        
+        // State
+        let dramas = [];
+        let currentSort = 'recent';
+        let currentDramaId = null;
+        
+        // Initialize the app
+        async function initApp() {
+            try {
+                await initDB();
+                await loadDramas();
+                setupEventListeners();
+            } catch (error) {
+                console.error('Initialization error:', error);
+                alert('Failed to initialize the application. Please try again.');
+            }
+        }
+        
+        // Load dramas from database
+        async function loadDramas() {
+            try {
+                dramas = await getAllDramas();
+                renderDramaList();
+                updateDramaCount();
+                if (statsSection.classList.contains('hidden') === false) {
+                    updateStatistics();
+                }
+            } catch (error) {
+                console.error('Error loading dramas:', error);
+            }
+        }
+        
+        // Render drama list
+        function renderDramas(dramasToRender) {
+            dramaList.innerHTML = '';
+            
+            if (dramasToRender.length === 0) {
+                dramaList.innerHTML = `
+                    <div class="col-span-full text-center py-10">
+                        <i class="fas fa-tv text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">No dramas found. Add your first drama!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            dramasToRender.forEach(drama => {
+                const dramaCard = document.createElement('div');
+                dramaCard.className = 'drama-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg';
+                dramaCard.innerHTML = `
+                    <div class="relative">
+                        <img src="${drama.imageUrl || 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${drama.title}" class="w-full h-48 object-cover">
+                        <div class="absolute top-2 right-2 ${getStatusBadgeClass(drama.status)} status-badge">${drama.status}</div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-1 truncate">${drama.title}</h3>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600 flex items-center">
+                                <span class="flag-icon ${getCountryFlagClass(drama.country)}"></span>
+                                ${drama.country}
+                            </span>
+                            <span class="text-xs px-2 py-1 rounded-full ${getGenreTagClass(drama.genre)}">${drama.genre}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm">
+                                ${renderRating(drama.rating, drama.ratingType)}
+                            </div>
+                            <button class="view-details text-purple-600 hover:text-purple-800 text-sm font-medium" data-id="${drama.id}">
+                                Details <i class="fas fa-chevron-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                dramaList.appendChild(dramaCard);
+            });
+            
+            // Add event listeners to details buttons
+            document.querySelectorAll('.view-details').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
+                    showDramaDetails(id);
+                });
+            });
+        }
+        
+        // Filter and sort dramas
+        function renderDramaList() {
+            let filteredDramas = [...dramas];
+            
+            // Apply search filter
+            const searchTerm = searchInput.value.toLowerCase();
+            if (searchTerm) {
+                filteredDramas = filteredDramas.filter(drama => 
+                    drama.title.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Apply country filter
+            const countryFilter = filterCountry.value;
+            if (countryFilter) {
+                filteredDramas = filteredDramas.filter(drama => 
+                    drama.country === countryFilter
+                );
+            }
+            
+            // Apply status filter
+            const statusFilter = filterStatus.value;
+            if (statusFilter) {
+                filteredDramas = filteredDramas.filter(drama => 
+                    drama.status === statusFilter
+                );
+            }
+            
+            // Apply rating filter
+            const ratingFilter = filterRating.value;
+            if (ratingFilter) {
+                filteredDramas = filteredDramas.filter(drama => 
+                    drama.rating >= parseInt(ratingFilter)
+                );
+            }
+            
+            // Apply sorting
+            switch (currentSort) {
+                case 'alphabetical':
+                    filteredDramas.sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+                case 'rating':
+                    filteredDramas.sort((a, b) => b.rating - a.rating);
+                    break;
+                case 'recent':
+                default:
+                    filteredDramas.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+                    break;
+            }
+            
+            renderDramas(filteredDramas);
+            updateDramaCount(filteredDramas.length);
+        }
+        
+        // Update drama count
+        function updateDramaCount(count) {
+            const total = count !== undefined ? count : dramas.length;
+            dramaCount.textContent = `${total} ${total === 1 ? 'drama' : 'dramas'}`;
+        }
+        
+        // Show drama details modal
+        async function showDramaDetails(id) {
+            const drama = dramas.find(d => d.id === id);
+            if (!drama) return;
+            
+            currentDramaId = id;
+            
+            modalTitle.textContent = drama.title;
+            modalGenre.textContent = drama.genre;
+            modalGenre.className = 'text-xs px-2 py-1 rounded-full ' + getGenreTagClass(drama.genre);
+            
+            modalCountry.innerHTML = `
+                <span class="flag-icon ${getCountryFlagClass(drama.country)}"></span>
+                ${drama.country}
+            `;
+            
+            modalImage.src = drama.imageUrl || 'https://via.placeholder.com/300x450?text=No+Image';
+            modalImage.alt = drama.title;
+            
+            modalStatus.textContent = drama.status;
+            modalStatus.className = 'status-badge ' + getStatusBadgeClass(drama.status);
+            
+            modalRating.innerHTML = renderRating(drama.rating, drama.ratingType);
+            
+            modalStarted.textContent = drama.dateStarted ? formatDate(drama.dateStarted) : '-';
+            modalFinished.textContent = drama.dateFinished ? formatDate(drama.dateFinished) : '-';
+            
+            modalReview.textContent = drama.review || 'No review added yet.';
+            
+            dramaModal.classList.remove('hidden');
+        }
+        
+        // Show edit drama modal
+        function showEditDramaModal() {
+            const drama = dramas.find(d => d.id === currentDramaId);
+            if (!drama) return;
+            
+            editId.value = drama.id;
+            editTitle.value = drama.title;
+            editGenre.value = drama.genre;
+            editCountry.value = drama.country;
+            editStatus.value = drama.status;
+            editRatingType.value = drama.ratingType;
+            editRatingInput.value = drama.rating;
+            
+            // Set up rating display
+            if (drama.ratingType === 'stars') {
+                editStarsRating.classList.remove('hidden');
+                editHeartsRating.classList.add('hidden');
+                editStarsValue.textContent = drama.rating;
+                
+                // Highlight stars
+                document.querySelectorAll('#edit-stars-rating .edit-rating-btn').forEach((btn, index) => {
+                    if (index < drama.rating) {
+                        btn.classList.add('text-yellow-400');
+                    } else {
+                        btn.classList.remove('text-yellow-400');
+                    }
+                });
+            } else {
+                editHeartsRating.classList.remove('hidden');
+                editStarsRating.classList.add('hidden');
+                editHeartsValue.textContent = drama.rating;
+                
+                // Highlight hearts
+                document.querySelectorAll('#edit-hearts-rating .edit-rating-btn').forEach((btn, index) => {
+                    if (index < drama.rating) {
+                        btn.classList.add('text-pink-500');
+                    } else {
+                        btn.classList.remove('text-pink-500');
+                    }
+                });
+            }
+            
+            editDateStarted.value = drama.dateStarted || '';
+            editDateFinished.value = drama.dateFinished || '';
+            editReview.value = drama.review || '';
+            editImageUrl.value = drama.imageUrl || '';
+            
+            dramaModal.classList.add('hidden');
+            editModal.classList.remove('hidden');
+        }
+        
+        // Format date for display
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+        
+        // Render rating display
+        function renderRating(rating, type) {
+            if (!rating || rating === 0) return 'Not rated';
+            
+            if (type === 'stars') {
+                let stars = '';
+                for (let i = 0; i < 10; i++) {
+                    stars += i < rating ? '★' : '☆';
+                }
+                return `<span class="rating-stars">${stars} ${rating}/10</span>`;
+            } else {
+                let hearts = '';
+                for (let i = 0; i < 5; i++) {
+                    hearts += i < rating ? '♥' : '♡';
+                }
+                return `<span class="rating-hearts">${hearts} ${rating}/5</span>`;
+            }
+        }
+        
+        // Get status badge class
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'Completed': return 'completed';
+                case 'Currently Watching': return 'watching';
+                case 'Plan to Watch': return 'planned';
+                default: return '';
+            }
+        }
+        
+        // Get genre tag class
+        function getGenreTagClass(genre) {
+            if (genre.includes('BL')) return 'bl-tag';
+            if (genre.includes('K-Drama')) return 'kdrama-tag';
+            return 'bg-gray-200 text-gray-800';
+        }
+        
+        // Get country flag class
+        function getCountryFlagClass(country) {
+            switch (country) {
+                case 'South Korea': return 'korea';
+                case 'Thailand': return 'thailand';
+                case 'Japan': return 'japan';
+                case 'China': return 'china';
+                case 'Taiwan': return 'taiwan';
+                default: return 'bg-gray-300';
+            }
+        }
+        
+        // Update statistics
+        function updateStatistics() {
+            // Basic counts
+            totalDramas.textContent = dramas.length;
+            completedDramas.textContent = dramas.filter(d => d.status === 'Completed').length;
+            watchingDramas.textContent = dramas.filter(d => d.status === 'Currently Watching').length;
+            plannedDramas.textContent = dramas.filter(d => d.status === 'Plan to Watch').length;
+            
+            // Country distribution
+            const countryCounts = {};
+            dramas.forEach(drama => {
+                countryCounts[drama.country] = (countryCounts[drama.country] || 0) + 1;
+            });
+            
+            // Genre distribution
+            const genreCounts = {};
+            dramas.forEach(drama => {
+                genreCounts[drama.genre] = (genreCounts[drama.genre] || 0) + 1;
+            });
+            
+            // Rating distribution
+            const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
+            dramas.forEach(drama => {
+                if (drama.rating > 0) {
+                    ratingCounts[drama.rating] = (ratingCounts[drama.rating] || 0) + 1;
+                }
+            });
+            
+            // Simple chart rendering (using HTML elements)
+            renderSimpleChart('country-chart', countryCounts, 'Countries', 'Dramas');
+            renderSimpleChart('genre-chart', genreCounts, 'Genres', 'Dramas');
+            renderSimpleChart('rating-chart', ratingCounts, 'Ratings', 'Dramas');
+        }
+        
+        // Render simple chart with HTML elements
+        function renderSimpleChart(containerId, data, xLabel, yLabel) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            const maxValue = Math.max(...Object.values(data));
+            const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+            
+            const chart = document.createElement('div');
+            chart.className = 'space-y-3';
+            
+            entries.forEach(([label, value]) => {
+                if (value === 0) return;
+                
+                const barContainer = document.createElement('div');
+                barContainer.className = 'flex items-center';
+                
+                const labelEl = document.createElement('div');
+                labelEl.className = 'w-24 text-sm text-gray-600 truncate';
+                labelEl.textContent = label;
+                
+                const barWrapper = document.createElement('div');
+                barWrapper.className = 'flex-1 flex items-center';
+                
+                const bar = document.createElement('div');
+                bar.className = 'h-6 bg-purple-500 rounded mr-2';
+                bar.style.width = `${(value / maxValue) * 100}%`;
+                
+                const valueEl = document.createElement('div');
+                valueEl.className = 'text-sm text-gray-600';
+                valueEl.textContent = value;
+                
+                barWrapper.appendChild(bar);
+                barWrapper.appendChild(valueEl);
+                barContainer.appendChild(labelEl);
+                barContainer.appendChild(barWrapper);
+                chart.appendChild(barContainer);
+            });
+            
+            container.appendChild(chart);
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Tab navigation
+            listTab.addEventListener('click', () => {
+                listTab.classList.add('text-purple-800', 'border-purple-800');
+                listTab.classList.remove('text-gray-500');
+                addTab.classList.add('text-gray-500');
+                addTab.classList.remove('text-purple-800', 'border-purple-800');
+                statsTab.classList.add('text-gray-500');
+                statsTab.classList.remove('text-purple-800', 'border-purple-800');
+                
+                listSection.classList.remove('hidden');
+                addSection.classList.add('hidden');
+                statsSection.classList.add('hidden');
+            });
+            
+            addTab.addEventListener('click', () => {
+                addTab.classList.add('text-purple-800', 'border-purple-800');
+                addTab.classList.remove('text-gray-500');
+                listTab.classList.add('text-gray-500');
+                listTab.classList.remove('text-purple-800', 'border-purple-800');
+                statsTab.classList.add('text-gray-500');
+                statsTab.classList.remove('text-purple-800', 'border-purple-800');
+                
+                addSection.classList.remove('hidden');
+                listSection.classList.add('hidden');
+                statsSection.classList.add('hidden');
+            });
+            
+            statsTab.addEventListener('click', () => {
+                statsTab.classList.add('text-purple-800', 'border-purple-800');
+                statsTab.classList.remove('text-gray-500');
+                listTab.classList.add('text-gray-500');
+                listTab.classList.remove('text-purple-800', 'border-purple-800');
+                addTab.classList.add('text-gray-500');
+                addTab.classList.remove('text-purple-800', 'border-purple-800');
+                
+                statsSection.classList.remove('hidden');
+                listSection.classList.add('hidden');
+                addSection.classList.add('hidden');
+                updateStatistics();
+            });
+            
+            // Search and filter
+            searchInput.addEventListener('input', renderDramaList);
+            filterCountry.addEventListener('change', renderDramaList);
+            filterStatus.addEventListener('change', renderDramaList);
+            filterRating.addEventListener('change', renderDramaList);
+            
+            // Sorting
+            sortAlphabetical.addEventListener('click', () => {
+                currentSort = 'alphabetical';
+                renderDramaList();
+            });
+            
+            sortRating.addEventListener('click', () => {
+                currentSort = 'rating';
+                renderDramaList();
+            });
+            
+            sortRecent.addEventListener('click', () => {
+                currentSort = 'recent';
+                renderDramaList();
+            });
+            
+            // Add drama form
+            ratingType.addEventListener('change', (e) => {
+                ratingContainer.classList.remove('hidden');
+                
+                if (e.target.value === 'stars') {
+                    starsRating.classList.remove('hidden');
+                    heartsRating.classList.add('hidden');
+                } else {
+                    heartsRating.classList.add('hidden');
+                    starsRating.classList.remove('hidden');
+                    heartsRating.classList.remove('hidden');
+                }
+            });
+            
+            // Rating buttons
+            document.querySelectorAll('.rating-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const value = parseInt(e.currentTarget.getAttribute('data-value'));
+                    const type = ratingType.value;
+                    
+                    ratingInput.value = value;
+                    
+                    if (type === 'stars') {
+                        starsValue.textContent = value;
+                        
+                        // Highlight stars
+                        document.querySelectorAll('#stars-rating .rating-btn').forEach((btn, index) => {
+                            if (index < value) {
+                                btn.classList.add('text-yellow-400');
+                            } else {
+                                btn.classList.remove('text-yellow-400');
+                            }
+                        });
+                    } else {
+                        heartsValue.textContent = value;
+                        
+                        // Highlight hearts
+                        document.querySelectorAll('#hearts-rating .rating-btn').forEach((btn, index) => {
+                            if (index < value) {
+                                btn.classList.add('text-pink-500');
+                            } else {
+                                btn.classList.remove('text-pink-500');
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // Edit rating buttons
+            document.querySelectorAll('.edit-rating-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const value = parseInt(e.currentTarget.getAttribute('data-value'));
+                    const type = editRatingType.value;
+                    
+                    editRatingInput.value = value;
+                    
+                    if (type === 'stars') {
+                        editStarsValue.textContent = value;
+                        
+                        // Highlight stars
+                        document.querySelectorAll('#edit-stars-rating .edit-rating-btn').forEach((btn, index) => {
+                            if (index < value) {
+                                btn.classList.add('text-yellow-400');
+                            } else {
+                                btn.classList.remove('text-yellow-400');
+                            }
+                        });
+                    } else {
+                        editHeartsValue.textContent = value;
+                        
+                        // Highlight hearts
+                        document.querySelectorAll('#edit-hearts-rating .edit-rating-btn').forEach((btn, index) => {
+                            if (index < value) {
+                                btn.classList.add('text-pink-500');
+                            } else {
+                                btn.classList.remove('text-pink-500');
+                            }
+                        });
+                    }
+                });
+            });
+            
+            editRatingType.addEventListener('change', (e) => {
+                if (e.target.value === 'stars') {
+                    editStarsRating.classList.remove('hidden');
+                    editHeartsRating.classList.add('hidden');
+                    
+                    // Convert hearts to stars (1-5 becomes 2-10)
+                    if (editRatingInput.value > 0) {
+                        const currentValue = parseInt(editRatingInput.value);
+                        const newValue = Math.min(10, currentValue * 2);
+                        editRatingInput.value = newValue;
+                        editStarsValue.textContent = newValue;
+                        
+                        // Highlight stars
+                        document.querySelectorAll('#edit-stars-rating .edit-rating-btn').forEach((btn, index) => {
+                            if (index < newValue) {
+                                btn.classList.add('text-yellow-400');
+                            } else {
+                                btn.classList.remove('text-yellow-400');
+                            }
+                        });
+                    }
+                } else {
+                    editHeartsRating.classList.remove('hidden');
+                    editStarsRating.classList.add('hidden');
+                    
+                    // Convert stars to hearts (2-10 becomes 1-5)
+                    if (editRatingInput.value > 0) {
+                        const currentValue = parseInt(editRatingInput.value);
+                        const newValue = Math.min(5, Math.ceil(currentValue / 2));
+                        editRatingInput.value = newValue;
+                        editHeartsValue.textContent = newValue;
+                        
+                        // Highlight hearts
+                        document.querySelectorAll('#edit-hearts-rating .edit-rating-btn').forEach((btn, index) => {
+                            if (index < newValue) {
+                                btn.classList.add('text-pink-500');
+                            } else {
+                                btn.classList.remove('text-pink-500');
+                            }
+                        });
+                    }
+                }
+            });
+            
+            // Form submission
+            addDramaForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const drama = {
+                    title: document.getElementById('title').value,
+                    genre: document.getElementById('genre').value,
+                    country: document.getElementById('country').value,
+                    status: document.getElementById('status').value,
+                    ratingType: document.getElementById('rating-type').value,
+                    rating: parseInt(document.getElementById('rating').value) || 0,
+                    dateStarted: document.getElementById('date-started').value || null,
+                    dateFinished: document.getElementById('date-finished').value || null,
+                    review: document.getElementById('review').value || null,
+                    imageUrl: document.getElementById('image-url').value || null
+                };
+                
+                try {
+                    await addDrama(drama);
+                    await loadDramas();
+                    addDramaForm.reset();
+                    ratingContainer.classList.add('hidden');
+                    starsRating.classList.add('hidden');
+                    heartsRating.classList.add('hidden');
+                    ratingInput.value = '0';
+                    
+                    // Switch to list view
+                    listTab.click();
+                    
+                    // Show success message
+                    alert('Drama added successfully!');
+                } catch (error) {
+                    console.error('Error adding drama:', error);
+                    alert('Failed to add drama. Please try again.');
+                }
+            });
+            
+            // Edit form submission
+            editDramaForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const drama = {
+                    id: parseInt(editId.value),
+                    title: editTitle.value,
+                    genre: editGenre.value,
+                    country: editCountry.value,
+                    status: editStatus.value,
+                    ratingType: editRatingType.value,
+                    rating: parseInt(editRatingInput.value) || 0,
+                    dateStarted: editDateStarted.value || null,
+                    dateFinished: editDateFinished.value || null,
+                    review: editReview.value || null,
+                    imageUrl: editImageUrl.value || null,
+                    dateAdded: dramas.find(d => d.id === parseInt(editId.value)).dateAdded
+                };
+                
+                try {
+                    await updateDrama(drama);
+                    await loadDramas();
+                    editModal.classList.add('hidden');
+                    
+                    // Show success message
+                    alert('Drama updated successfully!');
+                } catch (error) {
+                    console.error('Error updating drama:', error);
+                    alert('Failed to update drama. Please try again.');
+                }
+            });
+            
+            // Modal controls
+            closeModal.addEventListener('click', () => {
+                dramaModal.classList.add('hidden');
+            });
+            
+            closeEditModal.addEventListener('click', () => {
+                editModal.classList.add('hidden');
+            });
+            
+            cancelEdit.addEventListener('click', () => {
+                editModal.classList.add('hidden');
+            });
+            
+            editDramaBtn.addEventListener('click', showEditDramaModal);
+            
+            deleteDramaBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to delete this drama?')) {
+                    try {
+                        await deleteDrama(currentDramaId);
+                        await loadDramas();
+                        dramaModal.classList.add('hidden');
+                        alert('Drama deleted successfully!');
+                    } catch (error) {
+                        console.error('Error deleting drama:', error);
+                        alert('Failed to delete drama. Please try again.');
+                    }
+                }
+            });
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === dramaModal) {
+                    dramaModal.classList.add('hidden');
+                }
+                if (e.target === editModal) {
+                    editModal.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
