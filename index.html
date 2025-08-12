@@ -148,13 +148,69 @@
                     <button id="sort-recent" class="px-3 py-1 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Recent</button>
                 </div>
             </div>
-        </div>
-        
+     </div>
+            <div class="flex gap-2 mt-4">
+                <button id="export-data" class="px-3 py-1 bg-green-500 text-white rponded-1g hover:bg-green-600">Export List</button>
+                <input type="file" id="import-file" accept="json" class="hidden">
+                <button id="import-data" class="px-3 py-1 bg-blue-500 text-white rounded-1g hover:bg-blue-600">Import List</button>
+                </div>
+            </div>
         <!-- Drama List Section -->
         <section id="list-section">
             <div id="drama-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 <!-- Drama cards will be inserted here by JavaScript -->
             </div>
+        <script>
+            function saveDramasToLocalStorage(dramas) {
+    localStorage.setItem("dramaList", JSON.stringify(dramas));
+    autoBackupDramas(); // Auto-backup after saving
+}
+
+// AUTO BACKUP
+function autoBackupDramas() {
+    let dramas = localStorage.getItem("dramaList");
+    if (!dramas) return;
+
+    let blob = new Blob([dramas], { type: "application/json" });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = "dramaList.json";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// MANUAL EXPORT
+document.getElementById("export-data").addEventListener("click", function () {
+    autoBackupDramas();
+});
+
+// IMPORT
+document.getElementById("import-data").addEventListener("click", function () {
+    document.getElementById("import-file").click();
+});
+
+document.getElementById("import-file").addEventListener("change", function (event) {
+    let file = event.target.files[0];
+    if (!file) return;
+
+    let reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            let importedData = JSON.parse(e.target.result);
+            localStorage.setItem("dramaList", JSON.stringify(importedData));
+            alert("Import successful! Reloading...");
+            location.reload();
+        } catch (err) {
+            alert("Invalid file format.");
+        }
+    };
+    reader.readAsText(file);
+});
+     </script>
         </section>
         
         <!-- Add New Drama Section -->
