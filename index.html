@@ -149,70 +149,65 @@
                 </div>
             </div>
      </div>
-            <div class="flex gap-2 mt-4">
-                <button id="export-data" class="px-3 py-1 bg-green-500 text-white rponded-1g hover:bg-green-600">Export List</button>
-                <input type="file" id="import-file" accept="json" class="hidden">
-                <button id="import-data" class="px-3 py-1 bg-blue-500 text-white rounded-1g hover:bg-blue-600">Import List</button>
-                </div>
-            </div>
-        <!-- Drama List Section -->
-        <section id="list-section">
+        <!-- Drama List Section --> 
+          <section id="list-section">
             <div id="drama-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 <!-- Drama cards will be inserted here by JavaScript -->
             </div>
+            <div id="login-section">
+  <input type="text" id="username" placeholder="Enter username" />
+  <button id="login-btn">Login</button>
+</div>
+
+        <div id="tracker-section" style="display:none;">
+          <!-- Your existing tracker HTML goes here -->
+        </div>
         <script>
-            function saveDramasToLocalStorage(dramas) {
-    localStorage.setItem("dramaList", JSON.stringify(dramas));
-    autoBackupDramas(); // Auto-backup after saving
+            const loginSection = document.getElementById("login-section");
+const trackerSection = document.getElementById("tracker-section");
+const loginBtn = document.getElementById("login-btn");
+const usernameInput = document.getElementById("username");
+
+loginBtn.addEventListener("click", () => {
+  const username = usernameInput.value.trim();
+  if (!username) {
+    alert("Please enter a username.");
+    return;
+  }
+  localStorage.setItem("currentUser", username);
+  usernameInput.value = "";
+  loginSection.style.display = "none";
+  trackerSection.style.display = "block";
+
+  loadUserDramas(username); // You’ll create or modify this function to load dramas for the username
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  const username = localStorage.getItem("currentUser");
+  if (username) {
+    loginSection.style.display = "none";
+    trackerSection.style.display = "block";
+    loadUserDramas(username);
+  }
+});
+
+function loadUserDramas(username) {
+  // Modify this function to load dramas from localStorage key like "dramas_<username>"
+  const dramasJson = localStorage.getItem("dramas_" + username);
+  const dramas = dramasJson ? JSON.parse(dramasJson) : [];
+
+  // Use your existing code here to render dramas on the page
+  renderDramas(dramas);
 }
 
-// AUTO BACKUP
-function autoBackupDramas() {
-    let dramas = localStorage.getItem("dramaList");
-    if (!dramas) return;
-
-    let blob = new Blob([dramas], { type: "application/json" });
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement("a");
-    a.href = url;
-    a.download = "dramaList.json";
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+// When saving dramas after adding/removing:
+function saveUserDramas(dramas) {
+  const username = localStorage.getItem("currentUser");
+  if (!username) return;
+  localStorage.setItem("dramas_" + username, JSON.stringify(dramas));
 }
-
-// MANUAL EXPORT
-document.getElementById("export-data").addEventListener("click", function () {
-    autoBackupDramas();
-});
-
-// IMPORT
-document.getElementById("import-data").addEventListener("click", function () {
-    document.getElementById("import-file").click();
-});
-
-document.getElementById("import-file").addEventListener("change", function (event) {
-    let file = event.target.files[0];
-    if (!file) return;
-
-    let reader = new FileReader();
-    reader.onload = function (e) {
-        try {
-            let importedData = JSON.parse(e.target.result);
-            localStorage.setItem("dramaList", JSON.stringify(importedData));
-            alert("Import successful! Reloading...");
-            location.reload();
-        } catch (err) {
-            alert("Invalid file format.");
-        }
-    };
-    reader.readAsText(file);
-});
-     </script>
-        </section>
-        
+        </script>
+        </section>      
         <!-- Add New Drama Section -->
         <section id="add-section" class="hidden">
             <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
